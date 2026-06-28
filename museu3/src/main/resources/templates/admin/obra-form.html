@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title th:text="${tituloPagina} + ' – Museu Digital'">Obra</title>
+  <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+  <main class="main-content">
+    <div class="page-header">
+      <a th:href="@{/admin/obras}" class="btn-back"><i class="bi bi-arrow-left"></i> Voltar</a>
+      <h1 th:text="${tituloPagina}">Obra</h1>
+    </div>
+    <div class="content-body">
+      <div class="card-white" style="padding:2rem;max-width:860px;margin:0 auto;">
+        <form th:action="@{/admin/obras/salvar}" th:object="${obra}" method="post">
+          <input th:field="*{id}" type="hidden"/>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+
+            <div class="form-group" style="grid-column:1/-1;">
+              <label class="form-label">Título <span style="color:#d4183d;">*</span></label>
+              <input type="text" class="form-control-c" th:field="*{titulo}" placeholder="Título da obra" required/>
+            </div>
+
+            <div class="form-group" style="grid-column:1/-1;">
+              <label class="form-label">Autores <span style="color:#d4183d;">*</span>
+                <span style="font-size:.73rem;color:#a0a0b2;font-weight:400;">— Enter ou vírgula para adicionar</span>
+              </label>
+              <input type="hidden" id="autoresTexto" name="autoresTexto" th:value="${autoresTexto}"/>
+              <div class="chips-container" id="chipsContainer" onclick="document.getElementById('chipInput').focus()">
+                <input id="chipInput" class="chip-input" type="text" placeholder="Nome do autor..."/>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Tipo de Obra <span style="color:#d4183d;">*</span></label>
+              <select class="form-control-c" th:field="*{tipoObra}" required>
+                <option value="">Selecione...</option>
+                <option th:each="t : ${tiposObra}" th:value="${t}" th:text="${t.label}"
+                        th:selected="${obra.tipoObra == t}"></option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Categoria <span class="optional">(opcional)</span></label>
+              <input type="text" class="form-control-c" th:field="*{categoria}" placeholder="Ex.: História, Arte, Ciência"/>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Ano de Publicação</label>
+              <input type="number" class="form-control-c" th:field="*{anoPublicacao}" placeholder="Ex.: 1984" min="1" max="2099"/>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Data de Aquisição</label>
+              <input type="date" class="form-control-c" name="dataAquisicao" th:value="${obra.dataAquisicao}"/>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">ISBN <span class="optional">(opcional)</span></label>
+              <input type="text" class="form-control-c" th:field="*{isbn}" placeholder="Ex.: 978-3-16-148410-0"/>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">ISSN <span class="optional">(opcional)</span></label>
+              <input type="text" class="form-control-c" th:field="*{issn}" placeholder="Ex.: 0000-0000"/>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Número de Páginas <span class="optional">(opcional)</span></label>
+              <input type="number" class="form-control-c" th:field="*{numeroPaginas}" placeholder="Ex.: 320" min="1"/>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Técnica / Editora <span class="optional">(opcional)</span></label>
+              <input type="text" class="form-control-c" th:field="*{tecnica}" placeholder="Ex.: Companhia das Letras"/>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Dimensões <span class="optional">(opcional)</span></label>
+              <input type="text" class="form-control-c" th:field="*{dimensoes}" placeholder="Ex.: 21 cm × 14 cm"/>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Localização <span class="optional">(opcional)</span></label>
+              <input type="text" class="form-control-c" th:field="*{localizacao}" placeholder="Ex.: Estante 3 – Seção A"/>
+            </div>
+
+            <div class="form-group" style="grid-column:1/-1;">
+              <label class="form-label">URL da Imagem (capa) <span class="optional">(opcional)</span></label>
+              <input type="url" class="form-control-c" th:field="*{imageUrl}" id="imageUrl"
+                     placeholder="https://exemplo.com/capa.jpg" oninput="atualizarPreview()"/>
+              <div class="img-preview-wrap" id="previewWrap">
+                <img id="previewImg" src="" alt="Preview" onerror="document.getElementById('previewWrap').style.display='none'"/>
+              </div>
+            </div>
+
+            <div class="form-group" style="grid-column:1/-1;">
+              <label class="form-label">Descrição <span class="optional">(opcional)</span></label>
+              <textarea class="form-control-c" th:field="*{descricao}" rows="5"
+                        placeholder="Sinopse, contexto histórico, observações..."></textarea>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:1rem;margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid #eee;">
+            <button type="submit" class="btn-primary-custom"><i class="bi bi-floppy"></i> Salvar Obra</button>
+            <a th:href="@{/admin/obras}" class="btn-outline-custom">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+function atualizarPreview() {
+  const url  = document.getElementById('imageUrl').value.trim();
+  const wrap = document.getElementById('previewWrap');
+  const img  = document.getElementById('previewImg');
+  if (url) { img.src = url; wrap.style.display = 'block'; }
+  else      { wrap.style.display = 'none'; }
+}
+window.addEventListener('load', atualizarPreview);
+
+// Chips de autores
+const hiddenInput    = document.getElementById('autoresTexto');
+const chipsContainer = document.getElementById('chipsContainer');
+const chipInput      = document.getElementById('chipInput');
+let autores = [];
+
+(hiddenInput.value || '').split(',').map(s => s.trim()).filter(Boolean).forEach(addChip);
+
+function addChip(nome) {
+  nome = nome.trim();
+  if (!nome || autores.map(a=>a.toLowerCase()).includes(nome.toLowerCase())) return;
+  autores.push(nome);
+  const chip = document.createElement('span');
+  chip.className = 'chip';
+  chip.innerHTML = nome + '<button type="button" onclick="removeChip(this,\'' + nome.replace(/'/g,"\\'") + '\')">×</button>';
+  chipsContainer.insertBefore(chip, chipInput);
+  chipInput.value = '';
+  syncHidden();
+}
+
+function removeChip(btn, nome) {
+  autores = autores.filter(a => a.toLowerCase() !== nome.toLowerCase());
+  btn.parentElement.remove();
+  syncHidden();
+}
+
+function syncHidden() {
+  hiddenInput.value = Array.from(chipsContainer.querySelectorAll('.chip'))
+    .map(c => c.textContent.replace('×','').trim()).join(', ');
+}
+
+chipInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addChip(chipInput.value); }
+  if (e.key === 'Backspace' && !chipInput.value) {
+    const chips = chipsContainer.querySelectorAll('.chip');
+    if (chips.length) { const last = chips[chips.length-1]; removeChip(last.querySelector('button'), last.textContent.replace('×','').trim()); }
+  }
+});
+chipInput.addEventListener('blur', () => { if (chipInput.value.trim()) addChip(chipInput.value); });
+</script>
+</body>
+</html>

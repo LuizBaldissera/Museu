@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Gerenciar Obras – Museu Digital</title>
+  <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+  <main class="main-content">
+    <div class="page-header" style="padding-bottom:1.5rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div><h1>Gerenciar Obras</h1><p>Cadastro, edição e exclusão do acervo</p></div>
+        <a th:href="@{/admin/obras/nova}"
+           class="btn-primary-custom"
+           style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);">
+          <i class="bi bi-plus-circle"></i> Nova Obra
+        </a>
+      </div>
+    </div>
+
+    <div class="content-body">
+      <div th:if="${sucesso}" class="flash-success"><i class="bi bi-check-circle"></i> <span th:text="${sucesso}"></span></div>
+
+      <!-- ── Painel de Filtros ─────────────────────────────────── -->
+      <div class="card-white" style="margin-bottom:1.25rem;">
+        <form method="get" th:action="@{/admin/obras}">
+          <div class="filter-panel">
+            <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;gap:.75rem;align-items:end;">
+
+              <!-- Busca -->
+              <div>
+                <label>Buscar por título ou autor</label>
+                <div style="position:relative;">
+                  <i class="bi bi-search" style="position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:#a0a0b2;font-size:.9rem;"></i>
+                  <input class="filter-input" type="text" name="busca"
+                         th:value="${busca}" placeholder="Digite para pesquisar..."
+                         style="padding-left:2.3rem;"/>
+                </div>
+              </div>
+
+              <!-- Tipo de obra -->
+              <div>
+                <label>Tipo de obra</label>
+                <select class="filter-input" name="tipo">
+                  <option value="">Todos</option>
+                  <option th:each="t : ${tiposObra}" th:value="${t}" th:text="${t.label}"
+                          th:selected="${tipo == t}"></option>
+                </select>
+              </div>
+
+              <!-- Ano de publicação -->
+              <div>
+                <label>Ano de</label>
+                <input class="filter-input" type="number" name="anoInicio"
+                       th:value="${anoInicio}" placeholder="Ex: 1950"/>
+              </div>
+              <div>
+                <label>Ano até</label>
+                <input class="filter-input" type="number" name="anoFim"
+                       th:value="${anoFim}" placeholder="Ex: 2024"/>
+              </div>
+
+              <!-- Data de aquisição -->
+              <div>
+                <label>Aquisição de</label>
+                <input class="filter-input" type="date" name="dataInicio" th:value="${dataInicio}"/>
+              </div>
+              <div>
+                <label>Aquisição até</label>
+                <input class="filter-input" type="date" name="dataFim" th:value="${dataFim}"/>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:.75rem;margin-top:.9rem;align-items:center;">
+              <button type="submit" class="btn-primary-custom" style="padding:.6rem 1.25rem;">
+                <i class="bi bi-funnel"></i> Aplicar Filtros
+              </button>
+              <a th:href="@{/admin/obras}" class="btn-outline-custom" style="padding:.6rem 1.25rem;">
+                <i class="bi bi-x-circle"></i> Limpar
+              </a>
+              <span th:if="${temFiltro}"
+                    style="font-size:.8rem;color:#717182;margin-left:.25rem;">
+                <i class="bi bi-funnel-fill" style="color:var(--blue-main);"></i>
+                <span th:text="${#lists.size(obras)}">0</span> resultado(s) com filtros ativos
+              </span>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- ── Tabela de Obras ────────────────────────────────────── -->
+      <div class="card-white-lg">
+        <div th:if="${#lists.isEmpty(obras)}"
+             style="padding:3rem;text-align:center;color:#a0a0b2;">
+          <i class="bi bi-inbox" style="font-size:2.5rem;display:block;margin-bottom:.75rem;opacity:.4;"></i>
+          <p th:if="${temFiltro}">Nenhuma obra corresponde aos filtros aplicados.</p>
+          <p th:unless="${temFiltro}">Nenhuma obra cadastrada.</p>
+          <a th:href="@{/admin/obras/nova}" class="btn-primary-custom"
+             style="margin-top:.75rem;display:inline-flex;">Cadastrar primeira obra →</a>
+        </div>
+
+        <table th:unless="${#lists.isEmpty(obras)}" class="admin-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Tipo</th><th>Título</th><th>Autores</th>
+              <th>Ano</th><th>Localização</th><th>Imagem</th>
+              <th style="text-align:center;">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="o : ${obras}">
+              <td style="color:#a0a0b2;font-size:.8rem;" th:text="${o.id}"></td>
+              <td>
+                <span class="obra-type-badge"
+                      th:classappend="${o.tipoObra.name() == 'LIVRO'} ? 'badge-livro' :
+                                     (${o.tipoObra.name() == 'REVISTA'} ? 'badge-revista' : 'badge-jornal')"
+                      th:text="${o.tipoObra.label}"></span>
+              </td>
+              <td style="font-weight:500;max-width:200px;">
+                <a th:href="@{/obras/{id}(id=${o.id})}" th:text="${o.titulo}" style="color:#1a1a2e;"></a>
+              </td>
+              <td style="color:#717182;font-size:.82rem;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                  th:text="${!#strings.isEmpty(o.autoresComoTexto)} ? ${o.autoresComoTexto} : '—'"></td>
+              <td th:text="${o.anoPublicacao ?: '—'}"></td>
+              <td style="color:#717182;font-size:.82rem;" th:text="${!#strings.isEmpty(o.localizacao)} ? ${o.localizacao} : '—'"></td>
+              <td>
+                <img th:if="${o.imageUrl != null and !#strings.isEmpty(o.imageUrl)}"
+                     th:src="${o.imageUrl}" th:alt="${o.titulo}"
+                     style="width:46px;height:46px;object-fit:cover;border-radius:.4rem;border:1px solid #eee;"/>
+                <span th:unless="${o.imageUrl != null and !#strings.isEmpty(o.imageUrl)}" style="color:#d0d0d8;">—</span>
+              </td>
+              <td style="text-align:center;">
+                <div style="display:flex;justify-content:center;gap:.4rem;">
+                  <a th:href="@{/admin/obras/{id}/editar(id=${o.id})}" class="btn-edit-sm" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <a th:href="@{/admin/obras/{id}/excluir(id=${o.id})}"
+                     class="btn-danger-sm"
+                     th:attr="data-titulo=${o.titulo}"
+                     onclick="return confirm('Excluir &quot;' + this.dataset.titulo + '&quot;? Esta ação não pode ser desfeita.')">
+                    <i class="bi bi-trash"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div th:unless="${#lists.isEmpty(obras)}"
+             style="padding:.75rem 1rem;border-top:1px solid #f0f0f5;font-size:.8rem;color:#a0a0b2;">
+          Total exibido: <strong th:text="${#lists.size(obras)}"></strong> obra(s)
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

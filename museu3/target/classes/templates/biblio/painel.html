@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Meu Painel – Museu Digital</title>
+  <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+  <main class="main-content">
+    <!-- Header -->
+    <div class="page-header">
+      <h1>
+        Olá, <span th:text="${usuario.nomeCompleto ?: usuario.username}">Usuário</span>!
+      </h1>
+      <p>Bem-vindo ao painel do bibliotecário</p>
+
+      <div class="stats-row" style="margin-top:1.5rem;">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#3b82f6;"><i class="bi bi-collection"></i></div>
+          <div>
+            <div class="stat-value" th:text="${totalObras}">0</div>
+            <div class="stat-label">Obras no Acervo</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#f59e0b;"><i class="bi bi-sticky"></i></div>
+          <div>
+            <div class="stat-value" th:text="${totalNotas}">0</div>
+            <div class="stat-label">Minhas Notas</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#10b981;"><i class="bi bi-person-check"></i></div>
+          <div>
+            <div class="stat-value" style="font-size:1.1rem;padding-top:.3rem;" th:text="${usuario.role.name() == 'ADMIN'} ? 'Admin' : 'Bibliotecário'">—</div>
+            <div class="stat-label">Seu Perfil</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-body">
+
+      <!-- Ações rápidas -->
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+        <a th:href="@{/obras}" class="btn-primary-custom">
+          <i class="bi bi-collection"></i> Explorar Acervo
+        </a>
+        <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin/dashboard}" class="btn-outline-custom">
+          <i class="bi bi-speedometer2"></i> Painel Admin
+        </a>
+      </div>
+
+      <!-- Minhas notas recentes -->
+      <div class="card-white-lg">
+        <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #f0f0f5;display:flex;justify-content:space-between;align-items:center;">
+          <h4 style="margin:0;font-size:1.05rem;">
+            <i class="bi bi-sticky" style="color:#f59e0b;margin-right:.4rem;"></i>
+            Minhas Notas Internas
+          </h4>
+          <span style="font-size:.8rem;color:#a0a0b2;" th:text="${totalNotas} + ' nota(s)'"></span>
+        </div>
+
+        <!-- Sem notas -->
+        <div th:if="${#lists.isEmpty(minhasNotas)}"
+             style="padding:3rem;text-align:center;color:#a0a0b2;">
+          <i class="bi bi-sticky" style="font-size:2.5rem;display:block;margin-bottom:.75rem;opacity:.3;"></i>
+          <p>Você ainda não adicionou nenhuma nota.</p>
+          <a th:href="@{/obras}" class="btn-primary-custom" style="margin-top:1rem;display:inline-flex;">
+            <i class="bi bi-search"></i> Explorar obras para anotar
+          </a>
+        </div>
+
+        <!-- Lista de notas -->
+        <div th:unless="${#lists.isEmpty(minhasNotas)}" style="padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.75rem;">
+          <div th:each="nota : ${minhasNotas}" class="biblio-nota-card">
+            <div style="width:36px;height:36px;border-radius:.5rem;background:#fff8e1;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i class="bi bi-sticky-fill" style="color:#f59e0b;"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div class="biblio-nota-obra">
+                <a th:href="@{/obras/{id}(id=${nota.obra.id})}"
+                   th:text="${nota.obra.titulo}"
+                   style="color:var(--blue-main);"></a>
+              </div>
+              <p class="biblio-nota-txt" th:text="${nota.conteudo}"></p>
+              <div class="biblio-nota-meta">
+                <i class="bi bi-calendar3"></i>
+                <span th:text="${#temporals.format(nota.dataCriacao, 'dd/MM/yyyy HH:mm')}"></span>
+              </div>
+            </div>
+            <a th:href="@{/obras/{id}/nota/{nid}/excluir(id=${nota.obra.id},nid=${nota.id})}"
+               class="btn-danger-sm" style="flex-shrink:0;"
+               onclick="return confirm('Remover esta nota?')" title="Excluir nota">
+              <i class="bi bi-trash"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Info sobre o perfil -->
+      <div style="margin-top:1.5rem;background:#f0f4ff;border:1px solid #d0d8f0;border-radius:var(--radius);padding:1.25rem 1.5rem;">
+        <h4 style="font-size:.95rem;margin-bottom:.5rem;color:var(--blue-main);">
+          <i class="bi bi-info-circle"></i> Sobre seu acesso
+        </h4>
+        <p style="font-size:.85rem;color:#555;line-height:1.6;margin:0;">
+          Como <strong>Bibliotecário</strong>, você pode acessar todas as obras do acervo, visualizar detalhes completos e adicionar notas internas em qualquer obra. As notas são visíveis apenas para a equipe autenticada.
+          Para solicitar acesso de Administrador, entre em contato com o responsável pelo sistema.
+        </p>
+      </div>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>
