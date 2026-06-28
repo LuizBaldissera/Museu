@@ -94,4 +94,4 @@ http://localhost:8080
 
 O vídeo demonstrando o funcionamento do sistema pode ser acessado pelo link abaixo:
 
-**(Adicionar link do vídeo)**
+**https://drive.google.com/file/d/1Y7uOAYRMdqeNGxBgNyAnJNOezNE3M6Ta/view?usp=sharing**
